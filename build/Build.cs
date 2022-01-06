@@ -63,4 +63,38 @@ class Build : NukeBuild
                 .EnableNoRestore());
         });
 
+    Target Pack => _ => _
+        .DependsOn(Compile)
+        .Executes(() =>
+        {
+            DotNetPack(s => s
+                .SetProject(Solution)
+                .SetConfiguration(Configuration)
+                .SetVersion(GitVersion.NuGetVersionV2)
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .SetOutputDirectory(OutputDirectory));
+        });
+
+    Target Install => _ => _
+        .DependsOn(Pack)
+        .Executes(() =>
+        {
+            DotNetToolInstall(s => s
+                .SetPackageName("Megasware128.HalfLifeLauncher")
+                .EnableGlobal()
+                .AddSources(OutputDirectory)
+                .SetVersion(GitVersion.NuGetVersionV2));
+        });
+
+    Target Update => _ => _
+        .DependsOn(Pack)
+        .Executes(() =>
+        {
+            DotNetToolUpdate(s => s
+                .SetPackageName("Megasware128.HalfLifeLauncher")
+                .EnableGlobal()
+                .AddSources(OutputDirectory)
+                .SetVersion(GitVersion.NuGetVersionV2));
+        });
 }
