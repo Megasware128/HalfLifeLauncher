@@ -5,12 +5,16 @@ VisualStudioVersion = 17.0.32014.148
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Megasware128.HalfLifeLauncher", "Megasware128.HalfLifeLauncher\Megasware128.HalfLifeLauncher.csproj", "{B3702202-4A94-4046-9BFB-349C30A75458}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "build\_build.csproj", "{AA463C17-A8C6-464D-9724-3C875B5BDFE4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AA463C17-A8C6-464D-9724-3C875B5BDFE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA463C17-A8C6-464D-9724-3C875B5BDFE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B3702202-4A94-4046-9BFB-349C30A75458}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B3702202-4A94-4046-9BFB-349C30A75458}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B3702202-4A94-4046-9BFB-349C30A75458}.Release|Any CPU.ActiveCfg = Release|Any CPU
