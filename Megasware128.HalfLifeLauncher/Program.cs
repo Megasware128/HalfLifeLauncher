@@ -1,66 +1,44 @@
-﻿using System.Diagnostics;
-using Microsoft.Extensions.Configuration;
+﻿using System.CommandLine;
+using System.CommandLine.Builder;
+using System.CommandLine.Hosting;
+using System.CommandLine.NamingConventionBinder;
+using System.CommandLine.Parsing;
+using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-var host = Host.CreateDefaultBuilder(args)
-    .ConfigureLogging(logging =>
-    {
-        if (args[0] == "complete")
-        {
-            logging.ClearProviders();
-        }
-    })
-    .ConfigureAppConfiguration((hostingContext, config) =>
-    {
-        if (args[0] == "complete")
-        {
-            config.AddCommandLine(args[1].Split(' '));
-        }
-    })
-    .ConfigureServices((hostContext, services) =>
-    {
-        services.Configure<LaunchOptions>(hostContext.Configuration);
+var hlDir = new DirectoryInfo($@"C:\Program Files (x86)\Steam\steamapps\common\Half-Life");
 
-        if (args[0] == "complete")
-        {
-            services.AddHostedService<CompleteService>();
-        }
-        else
-        {
-            services.AddHostedService<LaunchService>();
-        }
-    })
-    .Build();
+var gameOption = new Option<string>(new[] { "--game", "-g" }, () => new LaunchOptions().Game, "The game to play")
+    .AddCompletions(c => hlDir.EnumerateDirectories().Where(d => d.EnumerateFiles().Any(f => f.Name == "liblist.gam")).Select(d => d.Name));
 
-await host.RunAsync();
-
-class CompleteService : BackgroundService
+var command = new RootCommand
 {
-    private readonly LaunchOptions launchOptions;
-    private readonly IHostApplicationLifetime lifetime;
-
-    public CompleteService(IOptions<LaunchOptions> launchOptions, IHostApplicationLifetime lifetime)
+    new Option<string>(new[] { "--map", "-m" }, () => new LaunchOptions().Map, "The map to play").AddCompletions(c =>
     {
-        this.launchOptions = launchOptions.Value;
-        this.lifetime = lifetime;
-    }
+        var game = c.ParseResult.GetValueForOption<string>(gameOption);
+        var mapsDir = new DirectoryInfo($@"{hlDir.FullName}\{game}\maps");
+        var mapFiles = mapsDir.EnumerateFiles("*.bsp");
+        return mapFiles.Select(f => f.Name.Replace(".bsp", ""));
+    }),
+    gameOption,
+    new Option<int>(new[] { "--maxplayers", "-mp" }, () => new LaunchOptions().MaxPlayers, "The maximum number of players"),
+    new Option<bool>(new[] { "--lan", "-l" }, () => new LaunchOptions().Lan, "Whether to play in LAN mode")
+};
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        var dir = new DirectoryInfo(@"C:\Program Files (x86)\Steam\steamapps\common\Half-Life\decay\maps");
-        var files = dir.GetFiles("*.bsp");
-        foreach (var file in files.Where(x => x.Name.StartsWith(launchOptions.Map)))
+command.Handler = CommandHandler.Create<IHost, CancellationToken>((host, ct) => host.RunAsync(ct));
+
+return await new CommandLineBuilder(command)
+    .UseHost(args => Host.CreateDefaultBuilder(args), host => host
+        .ConfigureServices((hostContext, services) =>
         {
-            Console.WriteLine(file.Name.Replace(".bsp", string.Empty));
-        }
-
-        lifetime.StopApplication();
-        return Task.CompletedTask;
-    }
-}
+            services.Configure<LaunchOptions>(hostContext.Configuration);
+            services.AddHostedService<LaunchService>();
+        }))
+    .UseDefaults()
+    .Build()
+    .InvokeAsync(args);
 
 class LaunchOptions
 {
