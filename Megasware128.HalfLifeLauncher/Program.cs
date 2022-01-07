@@ -18,11 +18,11 @@ var gameOption = new Option<string>(new[] { "--game", "-g" }, () => new LaunchOp
 string GetDefaultMap()
 {
     var game = new RootCommand { gameOption }.Parse(args).GetValueForOption(gameOption);
-    var dir = new DirectoryInfo(Path.Combine(config["HalfLifeDirectory"], game ?? new LaunchOptions().Game));
+    var dir = new DirectoryInfo(Path.Combine(hlDir.FullName, game ?? new LaunchOptions().Game));
     var liblist = dir.EnumerateFiles("liblist.gam").First();
     var lines = File.ReadAllLines(liblist.FullName);
     var startmap = lines.First(l => l.StartsWith("startmap", StringComparison.OrdinalIgnoreCase));
-    return startmap.Substring(startmap.IndexOf(' ') + 1).Replace(".bsp", "");
+    return startmap.Substring(startmap.IndexOf(' ') + 1).Replace(".bsp", string.Empty);
 }
 
 IEnumerable<string> GetMapCompletions(CompletionContext context)
@@ -30,7 +30,7 @@ IEnumerable<string> GetMapCompletions(CompletionContext context)
     var game = context.ParseResult.GetValueForOption<string>(gameOption);
     var mapsDir = new DirectoryInfo(Path.Combine(hlDir.FullName, game ?? new LaunchOptions().Game, "maps"));
     var mapFiles = mapsDir.EnumerateFiles("*.bsp");
-    return mapFiles.Select(f => f.Name.Replace(".bsp", ""));
+    return mapFiles.Select(f => f.Name.Replace(".bsp", string.Empty));
 }
 
 var command = new RootCommand("Launcher for Half-Life")
