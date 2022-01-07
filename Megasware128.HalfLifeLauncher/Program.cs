@@ -56,14 +56,15 @@ return await new CommandLineBuilder(command)
         .ConfigureServices((hostContext, services) =>
         {
             services.AddHttpClient();
-            services.AddHostedService<LogIpAddressService>();
+            services.AddHostedService<LogIpAddressService>().AddOptions<IpAddressOptions>().BindCommandLine();
             if (command.Parse(args).CommandResult.Command.Name == "ipaddress")
             {
-                services.AddOptions<IpAddressOptions>().BindCommandLine();
                 return;
             }
-            services.AddOptions<LaunchOptions>().Bind(hostContext.Configuration).BindCommandLine();
-            services.AddHostedService<LaunchService>();
+            services.AddHostedService<LaunchService>()
+                .AddOptions<LaunchOptions>()
+                .Bind(hostContext.Configuration)
+                .BindCommandLine();
         }))
     .UseDefaults()
     .Build()
