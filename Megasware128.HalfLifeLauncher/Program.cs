@@ -4,10 +4,6 @@ using System.CommandLine.Completions;
 using System.CommandLine.Hosting;
 using System.CommandLine.NamingConventionBinder;
 using System.CommandLine.Parsing;
-using System.Diagnostics;
-using System.Net;
-using System.Net.Sockets;
-using Microsoft.Extensions.Options;
 
 var config = new ConfigurationBuilder()
     .SetBasePath(Path.GetDirectoryName(typeof(Program).Assembly.Location))
@@ -73,80 +69,3 @@ return await new CommandLineBuilder(command)
     .UseDefaults()
     .Build()
     .InvokeAsync(args);
-
-class LaunchOptions
-{
-    public string Map { get; set; } = "dy_accident1";
-    public string Game { get; set; } = "decay";
-    public int MaxPlayers { get; set; } = 3;
-    public bool Lan { get; set; }
-    public string SteamDirectory { get; set; } = @"C:\Program Files (x86)\Steam";
-}
-
-class IpAddressOptions
-{
-    public bool Local { get; set; }
-}
-
-class LogIpAddressService : BackgroundService
-{
-    private readonly ILogger logger;
-    private readonly HttpClient httpClient;
-    private readonly IpAddressOptions ipAddressOptions;
-
-    public LogIpAddressService(ILogger<LogIpAddressService> logger, HttpClient httpClient, IOptions<IpAddressOptions> ipAddressOptions)
-    {
-        this.logger = logger;
-        this.httpClient = httpClient;
-        this.ipAddressOptions = ipAddressOptions.Value;
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        if (ipAddressOptions.Local)
-        {
-            logger.LogInformation($"Local IP address: {await GetLocalIpAddressAsync()}");
-        }
-        else
-        {
-            logger.LogInformation($"Public IP address: {await GetPublicIpAddressAsync()}");
-        }
-    }
-
-    private async Task<IPAddress> GetLocalIpAddressAsync()
-    {
-        var host = await Dns.GetHostEntryAsync(Dns.GetHostName());
-        return host.AddressList.FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork);
-    }
-
-    private async Task<string> GetPublicIpAddressAsync()
-    {
-        return await httpClient.GetStringAsync("https://api.ipify.org?format=text");
-    }
-}
-
-class LaunchService : BackgroundService
-{
-    private readonly LaunchOptions launchOptions;
-
-    public LaunchService(IOptions<LaunchOptions> launchOptions)
-    {
-        this.launchOptions = launchOptions.Value;
-    }
-
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        var steam = new Process
-        {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = Path.Combine(launchOptions.SteamDirectory, "steam.exe"),
-                Arguments = $"-applaunch 70 -game {launchOptions.Game} +sv_lan {Convert.ToByte(launchOptions.Lan)} +maxplayers {launchOptions.MaxPlayers} +map {launchOptions.Map}"
-            }
-        };
-
-        steam.Start();
-
-        return Task.CompletedTask;
-    }
-}
