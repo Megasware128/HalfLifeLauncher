@@ -73,7 +73,10 @@
             "enum": [
               "Clean",
               "Compile",
-              "Restore"
+              "Install",
+              "Pack",
+              "Restore",
+              "Update"
             ]
           }
         },
@@ -89,7 +92,10 @@
             "enum": [
               "Clean",
               "Compile",
-              "Restore"
+              "Install",
+              "Pack",
+              "Restore",
+              "Update"
             ]
           }
         },
