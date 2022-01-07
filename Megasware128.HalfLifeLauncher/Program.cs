@@ -41,10 +41,9 @@ var command = new RootCommand("Launcher for Half-Life")
     new Option<bool>(new[] { "--lan", "-l" }, () => new LaunchOptions().Lan, "Whether to play in LAN mode")
 };
 
-command.AddCommand(new Command("ipaddress", "Get the IP address of the local machine")
-{
-    new Option<bool>(new[] { "--local", "-l" }, () => false, "Whether to get the local IP address")
-});
+command.AddGlobalOption(new Option<bool>(new[] { "--local", "-l" }, () => false, "Whether to get the local IP address"));
+
+command.AddCommand(new Command("ipaddress", "Get the IP address of the local machine"));
 
 command.Handler = CommandHandler.Create(() => { }); // Empty handler to prevent subcommands from being required
 
