@@ -11,12 +11,12 @@ var hlDir = new DirectoryInfo($@"C:\Program Files (x86)\Steam\steamapps\common\H
 var gameOption = new Option<string>(new[] { "--game", "-g" }, () => new LaunchOptions().Game, "The game to play")
     .AddCompletions(c => hlDir.EnumerateDirectories().Where(d => d.EnumerateFiles().Any(f => f.Name == "liblist.gam")).Select(d => d.Name));
 
-var command = new RootCommand
+var command = new RootCommand("Launcher for Half-Life")
 {
     new Option<string>(new[] { "--map", "-m" }, () => new LaunchOptions().Map, "The map to play").AddCompletions(c =>
     {
         var game = c.ParseResult.GetValueForOption<string>(gameOption);
-        var mapsDir = new DirectoryInfo($@"{hlDir.FullName}\{game}\maps");
+        var mapsDir = new DirectoryInfo($@"{hlDir.FullName}\{game ?? new LaunchOptions().Game}\maps");
         var mapFiles = mapsDir.EnumerateFiles("*.bsp");
         return mapFiles.Select(f => f.Name.Replace(".bsp", ""));
     }),
