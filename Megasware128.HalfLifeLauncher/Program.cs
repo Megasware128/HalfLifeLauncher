@@ -4,6 +4,8 @@ using System.CommandLine.Hosting;
 using System.CommandLine.NamingConventionBinder;
 using System.CommandLine.Parsing;
 using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
 using Microsoft.Extensions.Options;
 
 var config = new ConfigurationBuilder()
@@ -30,9 +32,12 @@ var command = new RootCommand("Launcher for Half-Life")
     new Option<bool>(new[] { "--lan", "-l" }, () => new LaunchOptions().Lan, "Whether to play in LAN mode")
 };
 
-command.AddCommand(new Command("ipaddress"));
+command.AddCommand(new Command("ipaddress", "Get the IP address of the local machine")
+{
+    new Option<bool>(new[] { "--local", "-l" }, () => false, "Whether to get the local IP address")
+});
 
-command.Handler = CommandHandler.Create<IHost, CancellationToken>((host, ct) => host.RunAsync(ct));
+command.Handler = CommandHandler.Create(() => { }); // Empty handler to prevent subcommands from being required
 
 return await new CommandLineBuilder(command)
     .UseHost(args => Host.CreateDefaultBuilder(args), host => host
@@ -42,13 +47,14 @@ return await new CommandLineBuilder(command)
         })
         .ConfigureServices((hostContext, services) =>
         {
-            services.AddHttpClient<LogIpAddressService>();
+            services.AddHttpClient();
             services.AddHostedService<LogIpAddressService>();
             if (command.Parse(args).CommandResult.Command.Name == "ipaddress")
             {
+                services.AddOptions<IpAddressOptions>().BindCommandLine();
                 return;
             }
-            services.Configure<LaunchOptions>(hostContext.Configuration);
+            services.AddOptions<LaunchOptions>().Bind(hostContext.Configuration).BindCommandLine();
             services.AddHostedService<LaunchService>();
         }))
     .UseDefaults()
@@ -64,22 +70,45 @@ class LaunchOptions
     public string SteamDirectory { get; set; } = @"C:\Program Files (x86)\Steam";
 }
 
+class IpAddressOptions
+{
+    public bool Local { get; set; }
+}
+
 class LogIpAddressService : BackgroundService
 {
     private readonly ILogger logger;
     private readonly HttpClient httpClient;
+    private readonly IpAddressOptions ipAddressOptions;
 
-    public LogIpAddressService(ILogger<LogIpAddressService> logger, HttpClient httpClient)
+    public LogIpAddressService(ILogger<LogIpAddressService> logger, HttpClient httpClient, IOptions<IpAddressOptions> ipAddressOptions)
     {
         this.logger = logger;
         this.httpClient = httpClient;
+        this.ipAddressOptions = ipAddressOptions.Value;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // Get external ipv4 address and log it
-        var externalIp = await httpClient.GetStringAsync("https://api.ipify.org?format=text");
-        logger.LogInformation($"External IP: {externalIp}");
+        if (ipAddressOptions.Local)
+        {
+            logger.LogInformation($"Local IP address: {await GetLocalIpAddressAsync()}");
+        }
+        else
+        {
+            logger.LogInformation($"Public IP address: {await GetPublicIpAddressAsync()}");
+        }
+    }
+
+    private async Task<IPAddress> GetLocalIpAddressAsync()
+    {
+        var host = await Dns.GetHostEntryAsync(Dns.GetHostName());
+        return host.AddressList.FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork);
+    }
+
+    private async Task<string> GetPublicIpAddressAsync()
+    {
+        return await httpClient.GetStringAsync("https://api.ipify.org?format=text");
     }
 }
 
