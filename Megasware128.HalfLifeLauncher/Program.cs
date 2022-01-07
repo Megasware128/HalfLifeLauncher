@@ -6,7 +6,12 @@ using System.CommandLine.Parsing;
 using System.Diagnostics;
 using Microsoft.Extensions.Options;
 
-var hlDir = new DirectoryInfo($@"C:\Program Files (x86)\Steam\steamapps\common\Half-Life");
+var config = new ConfigurationBuilder()
+    .SetBasePath(Path.GetDirectoryName(typeof(Program).Assembly.Location))
+    .AddJsonFile("appsettings.json")
+    .Build();
+
+var hlDir = new DirectoryInfo(config["HalfLifeDirectory"]);
 
 var gameOption = new Option<string>(new[] { "--game", "-g" }, () => new LaunchOptions().Game, "The game to play")
     .AddCompletions(c => hlDir.EnumerateDirectories().Where(d => d.EnumerateFiles().Any(f => f.Name == "liblist.gam")).Select(d => d.Name));
@@ -56,6 +61,7 @@ class LaunchOptions
     public string Game { get; set; } = "decay";
     public int MaxPlayers { get; set; } = 3;
     public bool Lan { get; set; }
+    public string SteamDirectory { get; set; } = @"C:\Program Files (x86)\Steam";
 }
 
 class LogIpAddressService : BackgroundService
@@ -80,7 +86,6 @@ class LogIpAddressService : BackgroundService
 class LaunchService : BackgroundService
 {
     private readonly LaunchOptions launchOptions;
-    private readonly IHostApplicationLifetime lifetime;
 
     public LaunchService(IOptions<LaunchOptions> launchOptions)
     {
@@ -93,7 +98,7 @@ class LaunchService : BackgroundService
         {
             StartInfo = new ProcessStartInfo
             {
-                FileName = @"C:\Program Files (x86)\Steam\Steam.exe",
+                FileName = $@"{launchOptions.SteamDirectory}\Steam.exe",
                 Arguments = $"-applaunch 70 -game {launchOptions.Game} +sv_lan {Convert.ToByte(launchOptions.Lan)} +maxplayers {launchOptions.MaxPlayers} +map {launchOptions.Map}"
             }
         };
