@@ -27,7 +27,7 @@ class LogIpAddressService : BackgroundService
         }
     }
 
-    private async Task<IPAddress> GetLocalIpAddressAsync()
+    private async Task<IPAddress?> GetLocalIpAddressAsync()
     {
         var host = await Dns.GetHostEntryAsync(Dns.GetHostName());
         return host.AddressList.FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork);
