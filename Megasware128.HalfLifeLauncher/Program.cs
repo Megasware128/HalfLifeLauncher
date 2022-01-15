@@ -146,13 +146,14 @@ class SettingsFileConfigProvider : IniConfigurationProvider
     public SettingsFileConfigProvider(IniConfigurationSource source) : base(source)
     {
     }
-    
+
     public override void Set(string key, string value)
     {
         base.Set(key, value);
-        
-        if(_stream is null)
+
+        if (_stream is null)
         {
+            Directory.CreateDirectory(Path.GetDirectoryName(Source.Path)!);
             _stream = File.OpenWrite(Source.Path);
             _stream.Position = 0;
         }
@@ -163,7 +164,7 @@ class SettingsFileConfigProvider : IniConfigurationProvider
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        
+
         _stream?.Dispose();
     }
 }
