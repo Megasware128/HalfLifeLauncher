@@ -18,7 +18,7 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 [CheckBuildProjectConfigurations]
 [ShutdownDotNetAfterServerBuild]
-[GitHubActions("package", GitHubActionsImage.UbuntuLatest, On = new[] { GitHubActionsTrigger.Push }, InvokedTargets = new[] { nameof(Pack) })]
+[GitHubActions("package", GitHubActionsImage.UbuntuLatest, On = new[] { GitHubActionsTrigger.Push, GitHubActionsTrigger.PullRequest }, InvokedTargets = new[] { nameof(Pack) })]
 class Build : NukeBuild
 {
     /// Support plugins are available for:
