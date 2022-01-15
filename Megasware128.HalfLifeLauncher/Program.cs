@@ -111,7 +111,11 @@ return await new CommandLineBuilder(command)
     .Build()
     .InvokeAsync(args);
 
-record ConfigOptions(string HalfLifeDirectory, string SteamDirectory);
+class ConfigOptions
+{
+    public string HalfLifeDirectory { get; set; }
+    public string SteamDirectory { get; set; }
+}
 
 class ConfigService : BackgroundService
 {
