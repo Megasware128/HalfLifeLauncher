@@ -4,6 +4,9 @@ using System.CommandLine.Completions;
 using System.CommandLine.Hosting;
 using System.CommandLine.NamingConventionBinder;
 using System.CommandLine.Parsing;
+using System.Text;
+using Microsoft.Extensions.Configuration.Ini;
+using Microsoft.Extensions.Options;
 
 var config = new ConfigurationBuilder()
     .SetBasePath(Path.GetDirectoryName(typeof(Program).Assembly.Location))
@@ -45,6 +48,17 @@ command.AddGlobalOption(new Option<bool>(new[] { "--local", "-l" }, () => false,
 
 command.AddCommand(new Command("ipaddress", "Get the IP address of the local machine"));
 
+var configArgument = new Argument<ConfigArgument>("config", "Get or set the configuration");
+
+var configCommand = new Command("config", "Get or set the configuration")
+{
+    configArgument,
+    new Option<string>(new[] { "--half-life-directory", "-hl" }, () => config["HalfLifeDirectory"], "The directory containing Half-Life"),
+    new Option<string>(new[] { "--steam-directory", "-s" }, () => config["SteamDirectory"], "The directory containing Steam")
+};
+
+command.AddCommand(configCommand);
+
 command.Handler = CommandHandler.Create(() => { }); // Empty handler to prevent subcommands from being required
 
 return await new CommandLineBuilder(command)
@@ -52,12 +66,39 @@ return await new CommandLineBuilder(command)
         .ConfigureAppConfiguration(config =>
         {
             config.SetBasePath(Path.GetDirectoryName(typeof(Program).Assembly.Location));
+
+            config.Add<SettingsFileConfigurationSource>(builder =>
+            {
+                builder.Path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Megasware128", "HalfLifeLauncher", "settings.ini");
+                builder.Optional = true;
+            });
         })
         .ConfigureServices((hostContext, services) =>
         {
+            var commandResult = command.Parse(args).CommandResult;
+
+            if (commandResult.Command.Name == "config")
+            {
+                switch (commandResult.FindResultFor(configArgument)!.GetValueOrDefault<ConfigArgument>())
+                {
+                    case ConfigArgument.Get:
+                        Console.WriteLine($"Half-Life directory: {config["HalfLifeDirectory"]}");
+                        Console.WriteLine($"Steam directory: {config["SteamDirectory"]}");
+                        break;
+                    case ConfigArgument.Set:
+                        services.AddHostedService<ConfigService>()
+                                .AddOptions<ConfigOptions>()
+                                .Bind(config)
+                                .BindCommandLine();
+                        break;
+                }
+
+                return;
+            }
+
             services.AddHttpClient();
             services.AddHostedService<LogIpAddressService>().AddOptions<IpAddressOptions>().BindCommandLine();
-            if (command.Parse(args).CommandResult.Command.Name == "ipaddress")
+            if (commandResult.Command.Name == "ipaddress")
             {
                 return;
             }
@@ -69,3 +110,65 @@ return await new CommandLineBuilder(command)
     .UseDefaults()
     .Build()
     .InvokeAsync(args);
+
+record ConfigOptions(string HalfLifeDirectory, string SteamDirectory);
+
+class ConfigService : BackgroundService
+{
+    private readonly ConfigOptions _options;
+    private readonly IConfiguration _config;
+
+    public ConfigService(IOptions<ConfigOptions> options, IConfiguration config)
+    {
+        _options = options.Value;
+        _config = config;
+    }
+
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        _config["HalfLifeDirectory"] = _options.HalfLifeDirectory;
+        _config["SteamDirectory"] = _options.SteamDirectory;
+
+        return Task.CompletedTask;
+    }
+}
+
+enum ConfigArgument { Get, Set }
+
+class SettingsFileConfigProvider : IniConfigurationProvider
+{
+    private FileStream? _stream;
+
+    public SettingsFileConfigProvider(IniConfigurationSource source) : base(source)
+    {
+    }
+    
+    public override void Set(string key, string value)
+    {
+        base.Set(key, value);
+        
+        if(_stream is null)
+        {
+            _stream = File.OpenWrite(Source.Path);
+            _stream.Position = 0;
+        }
+
+        _stream.Write(Encoding.UTF8.GetBytes($"{key}={value}\n"));
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        
+        _stream?.Dispose();
+    }
+}
+
+class SettingsFileConfigurationSource : IniConfigurationSource
+{
+    public override IConfigurationProvider Build(IConfigurationBuilder builder)
+    {
+        EnsureDefaults(builder);
+        return new SettingsFileConfigProvider(this);
+    }
+}
