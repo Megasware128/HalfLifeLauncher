@@ -11,6 +11,12 @@ using Microsoft.Extensions.Options;
 var config = new ConfigurationBuilder()
     .SetBasePath(Path.GetDirectoryName(typeof(Program).Assembly.Location))
     .AddJsonFile("appsettings.json")
+    .Add<SettingsFileConfigurationSource>(builder =>
+    {
+        builder.Path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Megasware128", "HalfLifeLauncher", "settings.ini");
+        builder.Optional = true;
+        builder.ResolveFileProvider();
+    })
     .Build();
 
 var hlDir = new DirectoryInfo(config["HalfLifeDirectory"]);
@@ -71,6 +77,7 @@ return await new CommandLineBuilder(command)
             {
                 builder.Path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Megasware128", "HalfLifeLauncher", "settings.ini");
                 builder.Optional = true;
+                builder.ResolveFileProvider();
             });
         })
         .ConfigureServices((hostContext, services) =>
