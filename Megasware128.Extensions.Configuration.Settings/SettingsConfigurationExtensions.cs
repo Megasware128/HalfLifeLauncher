@@ -30,7 +30,7 @@ public static class SettingsConfigurationExtensions
             throw new ArgumentException("Path cannot be null or empty.", nameof(path));
         }
 
-        return builder.AddIniFile(s =>
+        return builder.AddSettingsFile(s =>
         {
             s.FileProvider = provider;
             s.Path = path;
@@ -40,6 +40,6 @@ public static class SettingsConfigurationExtensions
         });
     }
 
-    public static IConfigurationBuilder AddSettingsFile(this IConfigurationBuilder builder, Action<IniConfigurationSource> configureSource)
+    public static IConfigurationBuilder AddSettingsFile(this IConfigurationBuilder builder, Action<SettingsFileConfigurationSource> configureSource)
         => builder.Add(configureSource);
 }
