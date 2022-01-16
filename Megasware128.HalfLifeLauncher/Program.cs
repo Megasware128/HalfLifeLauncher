@@ -6,17 +6,15 @@ using System.CommandLine.NamingConventionBinder;
 using System.CommandLine.Parsing;
 using System.Text;
 using Microsoft.Extensions.Configuration.Ini;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
+
+var settingsFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Megasware128", "HalfLifeLauncher", "settings.ini");
 
 var config = new ConfigurationBuilder()
     .SetBasePath(Path.GetDirectoryName(typeof(Program).Assembly.Location))
     .AddJsonFile("appsettings.json")
-    .Add<SettingsFileConfigurationSource>(builder =>
-    {
-        builder.Path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Megasware128", "HalfLifeLauncher", "settings.ini");
-        builder.Optional = true;
-        builder.ResolveFileProvider();
-    })
+    .AddSettingsFile(settingsFile, true)
     .Build();
 
 var hlDir = new DirectoryInfo(config["HalfLifeDirectory"]);
@@ -78,12 +76,7 @@ return await new CommandLineBuilder(command)
         {
             config.SetBasePath(Path.GetDirectoryName(typeof(Program).Assembly.Location));
 
-            config.Add<SettingsFileConfigurationSource>(builder =>
-            {
-                builder.Path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Megasware128", "HalfLifeLauncher", "settings.ini");
-                builder.Optional = true;
-                builder.ResolveFileProvider();
-            });
+            config.AddSettingsFile(settingsFile, true);
         })
         .ConfigureServices((hostContext, services) =>
         {
@@ -190,4 +183,46 @@ class SettingsFileConfigurationSource : IniConfigurationSource
         EnsureDefaults(builder);
         return new SettingsFileConfigProvider(this);
     }
+}
+
+static class SettingsConfigurationExtensions
+{
+    public static IConfigurationBuilder AddSettingsFile(this IConfigurationBuilder builder, string path)
+    {
+        return AddSettingsFile(builder, provider: null, path: path, optional: false, reloadOnChange: false);
+    }
+
+    public static IConfigurationBuilder AddSettingsFile(this IConfigurationBuilder builder, string path, bool optional)
+    {
+        return AddSettingsFile(builder, provider: null, path: path, optional: optional, reloadOnChange: false);
+    }
+
+    public static IConfigurationBuilder AddSettingsFile(this IConfigurationBuilder builder, string path, bool optional, bool reloadOnChange)
+    {
+        return AddSettingsFile(builder, provider: null, path: path, optional: optional, reloadOnChange: reloadOnChange);
+    }
+
+    public static IConfigurationBuilder AddSettingsFile(this IConfigurationBuilder builder, IFileProvider? provider, string path, bool optional, bool reloadOnChange)
+    {
+        if (builder == null)
+        {
+            throw new ArgumentNullException(nameof(builder));
+        }
+        if (string.IsNullOrEmpty(path))
+        {
+            throw new ArgumentException("Path cannot be null or empty.", nameof(path));
+        }
+
+        return builder.AddIniFile(s =>
+        {
+            s.FileProvider = provider;
+            s.Path = path;
+            s.Optional = optional;
+            s.ReloadOnChange = reloadOnChange;
+            s.ResolveFileProvider();
+        });
+    }
+
+    public static IConfigurationBuilder AddSettingsFile(this IConfigurationBuilder builder, Action<IniConfigurationSource> configureSource)
+        => builder.Add(configureSource);
 }
