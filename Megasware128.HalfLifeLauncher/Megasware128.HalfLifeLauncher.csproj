@@ -16,4 +16,8 @@
     <PackageReference Include="System.CommandLine.Hosting" Version="0.4.0-alpha.21617.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Megasware128.Extensions.Configuration.Settings\Megasware128.Extensions.Configuration.Settings.csproj" />
+  </ItemGroup>
+
 </Project>

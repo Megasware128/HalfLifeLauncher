@@ -4,10 +4,14 @@ using System.CommandLine.Completions;
 using System.CommandLine.Hosting;
 using System.CommandLine.NamingConventionBinder;
 using System.CommandLine.Parsing;
+using Megasware128.Extensions.Configuration.Settings;
+
+var settingsFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Megasware128", "HalfLifeLauncher", "settings.ini");
 
 var config = new ConfigurationBuilder()
     .SetBasePath(Path.GetDirectoryName(typeof(Program).Assembly.Location))
     .AddJsonFile("appsettings.json")
+    .AddSettingsFile(settingsFile, true)
     .Build();
 
 var hlDir = new DirectoryInfo(config["HalfLifeDirectory"]);
@@ -18,11 +22,16 @@ var gameOption = new Option<string>(new[] { "--game", "-g" }, () => new LaunchOp
 string GetDefaultMap()
 {
     var game = new RootCommand { gameOption }.Parse(args).GetValueForOption(gameOption);
-    var dir = new DirectoryInfo(Path.Combine(hlDir.FullName, game ?? new LaunchOptions().Game));
+    var path = Path.Combine(hlDir.FullName, game ?? new LaunchOptions().Game);
+    if (!Directory.Exists(path))
+    {
+        return string.Empty;
+    }
+    var dir = new DirectoryInfo(path);
     var liblist = dir.EnumerateFiles("liblist.gam").First();
     var lines = File.ReadAllLines(liblist.FullName);
     var startmap = lines.First(l => l.StartsWith("startmap", StringComparison.OrdinalIgnoreCase));
-    return startmap.Substring(startmap.IndexOf(' ') + 1).Replace(".bsp", string.Empty);
+    return startmap[(startmap.IndexOf(' ') + 1)..].Replace(".bsp", string.Empty);
 }
 
 IEnumerable<string> GetMapCompletions(CompletionContext context)
@@ -45,6 +54,17 @@ command.AddGlobalOption(new Option<bool>(new[] { "--local", "-l" }, () => false,
 
 command.AddCommand(new Command("ipaddress", "Get the IP address of the local machine"));
 
+var configArgument = new Argument<ConfigArgument>("config", "Get or set the configuration");
+
+var configCommand = new Command("config", "Get or set the configuration")
+{
+    configArgument,
+    new Option<string>(new[] { "--half-life-directory", "-hl" }, () => config["HalfLifeDirectory"], "The directory containing Half-Life"),
+    new Option<string>(new[] { "--steam-directory", "-s" }, () => config["SteamDirectory"], "The directory containing Steam")
+};
+
+command.AddCommand(configCommand);
+
 command.Handler = CommandHandler.Create(() => { }); // Empty handler to prevent subcommands from being required
 
 return await new CommandLineBuilder(command)
@@ -52,12 +72,26 @@ return await new CommandLineBuilder(command)
         .ConfigureAppConfiguration(config =>
         {
             config.SetBasePath(Path.GetDirectoryName(typeof(Program).Assembly.Location));
+
+            config.AddSettingsFile(settingsFile, true);
         })
         .ConfigureServices((hostContext, services) =>
         {
+            var commandName = command.Parse(args).CommandResult.Command.Name;
+
+            if (commandName is "config")
+            {
+                services.AddHostedService<ConfigService>()
+                        .AddOptions<ConfigOptions>()
+                        .Bind(config)
+                        .BindCommandLine();
+
+                return;
+            }
+
             services.AddHttpClient();
             services.AddHostedService<LogIpAddressService>().AddOptions<IpAddressOptions>().BindCommandLine();
-            if (command.Parse(args).CommandResult.Command.Name == "ipaddress")
+            if (commandName is "ipaddress")
             {
                 return;
             }
