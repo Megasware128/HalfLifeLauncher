@@ -31,7 +31,7 @@ string GetDefaultMap()
     var liblist = dir.EnumerateFiles("liblist.gam").First();
     var lines = File.ReadAllLines(liblist.FullName);
     var startmap = lines.First(l => l.StartsWith("startmap", StringComparison.OrdinalIgnoreCase));
-    return startmap.Substring(startmap.IndexOf(' ') + 1).Replace(".bsp", string.Empty);
+    return startmap[(startmap.IndexOf(' ') + 1)..].Replace(".bsp", string.Empty);
 }
 
 IEnumerable<string> GetMapCompletions(CompletionContext context)
@@ -77,30 +77,21 @@ return await new CommandLineBuilder(command)
         })
         .ConfigureServices((hostContext, services) =>
         {
-            var commandResult = command.Parse(args).CommandResult;
+            var commandName = command.Parse(args).CommandResult.Command.Name;
 
-            if (commandResult.Command.Name == "config")
+            if (commandName is "config")
             {
-                switch (commandResult.FindResultFor(configArgument)!.GetValueOrDefault<ConfigArgument>())
-                {
-                    case ConfigArgument.Get:
-                        Console.WriteLine($"Half-Life directory: {config["HalfLifeDirectory"]}");
-                        Console.WriteLine($"Steam directory: {config["SteamDirectory"]}");
-                        break;
-                    case ConfigArgument.Set:
-                        services.AddHostedService<ConfigService>()
-                                .AddOptions<ConfigOptions>()
-                                .Bind(config)
-                                .BindCommandLine();
-                        break;
-                }
+                services.AddHostedService<ConfigService>()
+                        .AddOptions<ConfigOptions>()
+                        .Bind(config)
+                        .BindCommandLine();
 
                 return;
             }
 
             services.AddHttpClient();
             services.AddHostedService<LogIpAddressService>().AddOptions<IpAddressOptions>().BindCommandLine();
-            if (commandResult.Command.Name == "ipaddress")
+            if (commandName is "ipaddress")
             {
                 return;
             }
