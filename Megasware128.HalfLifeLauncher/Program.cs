@@ -27,7 +27,12 @@ var gameOption = new Option<string>(new[] { "--game", "-g" }, () => new LaunchOp
 string GetDefaultMap()
 {
     var game = new RootCommand { gameOption }.Parse(args).GetValueForOption(gameOption);
-    var dir = new DirectoryInfo(Path.Combine(hlDir.FullName, game ?? new LaunchOptions().Game));
+    var path = Path.Combine(hlDir.FullName, game ?? new LaunchOptions().Game);
+    if (!Directory.Exists(path))
+    {
+        return string.Empty;
+    }
+    var dir = new DirectoryInfo(path);
     var liblist = dir.EnumerateFiles("liblist.gam").First();
     var lines = File.ReadAllLines(liblist.FullName);
     var startmap = lines.First(l => l.StartsWith("startmap", StringComparison.OrdinalIgnoreCase));
@@ -160,9 +165,11 @@ class SettingsFileConfigProvider : IniConfigurationProvider
 
         if (_stream is null)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(Source.Path)!);
-            _stream = File.OpenWrite(Source.Path);
-            _stream.Position = 0;
+            var path = Source.FileProvider.GetFileInfo(Source.Path).PhysicalPath;
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            _stream = File.OpenWrite(path);
+            _stream.SetLength(0);
+            _stream.Seek(0, SeekOrigin.Begin);
         }
 
         _stream.Write(Encoding.UTF8.GetBytes($"{key}={value}\n"));
