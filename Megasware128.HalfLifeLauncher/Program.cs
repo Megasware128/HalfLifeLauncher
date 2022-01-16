@@ -4,6 +4,7 @@ using System.CommandLine.Completions;
 using System.CommandLine.Hosting;
 using System.CommandLine.NamingConventionBinder;
 using System.CommandLine.Parsing;
+using Megasware128.Extensions.Configuration.Settings;
 
 var settingsFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Megasware128", "HalfLifeLauncher", "settings.ini");
 

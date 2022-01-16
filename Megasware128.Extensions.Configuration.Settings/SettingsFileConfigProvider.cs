@@ -1,7 +1,8 @@
 using System.Text;
-using Microsoft.Extensions.Configuration.Ini;
 
-class SettingsFileConfigProvider : IniConfigurationProvider
+namespace Megasware128.Extensions.Configuration.Settings;
+
+public class SettingsFileConfigProvider : IniConfigurationProvider
 {
     private FileStream? _stream;
 
@@ -22,7 +23,9 @@ class SettingsFileConfigProvider : IniConfigurationProvider
             _stream.Seek(0, SeekOrigin.Begin);
         }
 
-        _stream.Write(Encoding.UTF8.GetBytes($"{key}={value}\n"));
+        var bytes = Encoding.UTF8.GetBytes($"{key}={value}\n");
+
+        _stream.Write(bytes, 0, bytes.Length);
     }
 
     protected override void Dispose(bool disposing)

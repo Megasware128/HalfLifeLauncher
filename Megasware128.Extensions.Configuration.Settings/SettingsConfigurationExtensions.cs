@@ -1,8 +1,8 @@
-using System.CommandLine;
-using Microsoft.Extensions.Configuration.Ini;
 using Microsoft.Extensions.FileProviders;
 
-static class SettingsConfigurationExtensions
+namespace Megasware128.Extensions.Configuration.Settings;
+
+public static class SettingsConfigurationExtensions
 {
     public static IConfigurationBuilder AddSettingsFile(this IConfigurationBuilder builder, string path)
     {

@@ -1,6 +1,6 @@
-using Microsoft.Extensions.Configuration.Ini;
+namespace Megasware128.Extensions.Configuration.Settings;
 
-class SettingsFileConfigurationSource : IniConfigurationSource
+public class SettingsFileConfigurationSource : IniConfigurationSource
 {
     public override IConfigurationProvider Build(IConfigurationBuilder builder)
     {
