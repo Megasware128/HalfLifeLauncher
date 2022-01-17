@@ -1,3 +1,5 @@
+namespace Megasware128.HalfLifeLauncher.Options;
+
 class ConfigOptions
 {
     public ConfigArgument Config { get; set; }

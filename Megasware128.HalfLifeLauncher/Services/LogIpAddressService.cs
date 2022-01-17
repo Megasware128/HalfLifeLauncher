@@ -2,6 +2,8 @@ using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Options;
 
+namespace Megasware128.HalfLifeLauncher.Services;
+
 class LogIpAddressService : BackgroundService
 {
     private readonly ILogger logger;

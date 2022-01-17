@@ -1,4 +1,8 @@
-﻿using System.CommandLine;
+﻿global using Megasware128.HalfLifeLauncher;
+global using Megasware128.HalfLifeLauncher.Options;
+global using Megasware128.HalfLifeLauncher.Services;
+
+using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Completions;
 using System.CommandLine.Hosting;

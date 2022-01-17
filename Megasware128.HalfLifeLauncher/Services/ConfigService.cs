@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Options;
 
+namespace Megasware128.HalfLifeLauncher.Services;
+
 class ConfigService : BackgroundService
 {
     private readonly ConfigOptions _options;

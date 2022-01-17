@@ -1,3 +1,5 @@
+namespace Megasware128.HalfLifeLauncher.Options;
+
 class LaunchOptions
 {
     public string Map { get; set; } = "dy_accident1";

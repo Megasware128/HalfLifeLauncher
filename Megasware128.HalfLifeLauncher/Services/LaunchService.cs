@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Options;
 
+namespace Megasware128.HalfLifeLauncher.Services;
+
 class LaunchService : BackgroundService
 {
     private readonly LaunchOptions launchOptions;
