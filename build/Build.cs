@@ -76,7 +76,7 @@ class Build : NukeBuild
 
     Target Pack => _ => _
         .DependsOn(Compile)
-        .Produces(OutputDirectory / "*.nupkg", OutputDirectory / "*.tar.gz", OutputDirectory / "*.zip")
+        .Produces(OutputDirectory / "*.nupkg", OutputDirectory / "*.tgz", OutputDirectory / "*.zip")
         .Executes(() =>
         {
             DotNetPack(s => s
@@ -119,7 +119,7 @@ class Build : NukeBuild
                 tasks.Add(Task.Run(() =>
                 {
                     var runtimeDirectory = OutputDirectory / "runtimes" / runtime;
-                    var runtimeDirectoryTarGz = OutputDirectory / $"{Solution.Megasware128_HalfLifeLauncher.Name}.{runtime}.tar.gz";
+                    var runtimeDirectoryTarGz = OutputDirectory / $"{Solution.Megasware128_HalfLifeLauncher.Name}.{runtime}.tgz";
 
                     Compress(runtimeDirectory, runtimeDirectoryTarGz);
                 }));
@@ -146,7 +146,7 @@ class Build : NukeBuild
                 var output = new DirectoryInfo(OutputDirectory);
 
                 var files = output.GetFiles("*.nupkg")
-                    .Concat(output.GetFiles("*.tar.gz")
+                    .Concat(output.GetFiles("*.tgz")
                     .Concat(output.GetFiles("*.zip")));
 
                 foreach (var file in files)
@@ -154,7 +154,7 @@ class Build : NukeBuild
                     var contentType = file.Extension switch
                     {
                         ".nupkg" => "application/zip",
-                        ".tar.gz" => "application/gzip",
+                        ".tgz" => "application/gzip",
                         ".zip" => "application/zip",
                         _ => throw new InvalidOperationException($"Unknown file extension: {file.Extension}")
                     };
