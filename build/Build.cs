@@ -91,12 +91,15 @@ class Build : NukeBuild
             DotNetPublish(s => s
                 .SetProject(Solution.Megasware128_HalfLifeLauncher)
                 .SetConfiguration(Configuration)
+                .SetAssemblyVersion(GitVersion.AssemblySemVer)
+                .SetFileVersion(GitVersion.AssemblySemFileVer)
+                .SetInformationalVersion(GitVersion.InformationalVersion)
                 .SetVersion(GitVersion.NuGetVersionV2)
                 .EnableNoRestore()
                 .EnableSelfContained()
                 .CombineWith(runtimes, (s, r) => s
                     .SetRuntime(r)
-                    .SetOutput(OutputDirectory / "runtimes" / r)), 3);
+                    .SetOutput(TemporaryDirectory / "runtimes" / r)), 3);
 
             var windowsRuntimes = runtimes.Where(r => r.StartsWith("win")).ToArray();
             var otherRuntimes = runtimes.Except(windowsRuntimes).ToArray();
@@ -107,7 +110,7 @@ class Build : NukeBuild
             {
                 tasks.Add(Task.Run(() =>
                 {
-                    var runtimeDirectory = OutputDirectory / "runtimes" / runtime;
+                    var runtimeDirectory = TemporaryDirectory / "runtimes" / runtime;
                     var runtimeDirectoryZip = OutputDirectory / $"{Solution.Megasware128_HalfLifeLauncher.Name}.{runtime}.zip";
 
                     Compress(runtimeDirectory, runtimeDirectoryZip);
@@ -118,7 +121,7 @@ class Build : NukeBuild
             {
                 tasks.Add(Task.Run(() =>
                 {
-                    var runtimeDirectory = OutputDirectory / "runtimes" / runtime;
+                    var runtimeDirectory = TemporaryDirectory / "runtimes" / runtime;
                     var runtimeDirectoryTarGz = OutputDirectory / $"{Solution.Megasware128_HalfLifeLauncher.Name}.{runtime}.tgz";
 
                     Compress(runtimeDirectory, runtimeDirectoryTarGz);
