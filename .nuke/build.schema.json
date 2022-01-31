@@ -75,6 +75,7 @@
               "Compile",
               "Install",
               "Pack",
+              "Publish",
               "Restore",
               "Update"
             ]
@@ -94,6 +95,7 @@
               "Compile",
               "Install",
               "Pack",
+              "Publish",
               "Restore",
               "Update"
             ]
