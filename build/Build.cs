@@ -45,6 +45,8 @@ class Build : NukeBuild
     [GitVersion] readonly GitVersion GitVersion;
     [CI] readonly GitHubActions GitHubActions;
 
+    [PackageExecutable("dotnet-deb", "dotnet-deb.dll", Framework = "net6.0")] readonly Tool Deb;
+
     AbsolutePath OutputDirectory => RootDirectory / "output";
 
     Target Clean => _ => _
@@ -76,7 +78,7 @@ class Build : NukeBuild
 
     Target Pack => _ => _
         .DependsOn(Compile)
-        .Produces(OutputDirectory / "*.nupkg", OutputDirectory / "*.tgz", OutputDirectory / "*.zip")
+        .Produces(OutputDirectory / "*.nupkg", OutputDirectory / "*.tgz", OutputDirectory / "*.zip", OutputDirectory / "*.deb")
         .Executes(() =>
         {
             DotNetPack(s => s
@@ -102,6 +104,7 @@ class Build : NukeBuild
                     .SetOutput(TemporaryDirectory / "runtimes" / r)), 3);
 
             var windowsRuntimes = runtimes.Where(r => r.StartsWith("win")).ToArray();
+            var debianRuntimes = runtimes.Where(r => r.StartsWith("debian")).ToArray();
             var otherRuntimes = runtimes.Except(windowsRuntimes).ToArray();
 
             var tasks = new List<Task>();
@@ -128,6 +131,17 @@ class Build : NukeBuild
                 }));
             }
 
+            foreach (var runtime in debianRuntimes)
+            {
+                tasks.Add(Task.Run(() =>
+                {
+                    var runtimeDirectory = OutputDirectory / "runtimes" / runtime;
+                    var runtimeDirectoryDeb = OutputDirectory / $"{Solution.Megasware128_HalfLifeLauncher.Name}.{runtime}.deb";
+
+                    Deb($"-r {runtime} -c {Configuration} -o {OutputDirectory} --version-suffix {GitVersion.NuGetVersionV2} --no-restore");
+                }));
+            }
+
             return Task.WhenAll(tasks);
         });
 
@@ -150,7 +164,8 @@ class Build : NukeBuild
 
                 var files = output.GetFiles("*.nupkg")
                     .Concat(output.GetFiles("*.tgz")
-                    .Concat(output.GetFiles("*.zip")));
+                    .Concat(output.GetFiles("*.zip")
+                    .Concat(output.GetFiles("*.deb"))));
 
                 foreach (var file in files)
                 {
@@ -159,6 +174,7 @@ class Build : NukeBuild
                         ".nupkg" => "application/zip",
                         ".tgz" => "application/gzip",
                         ".zip" => "application/zip",
+                        ".deb" => "application/x-deb",
                         _ => throw new InvalidOperationException($"Unknown file extension: {file.Extension}")
                     };
 
