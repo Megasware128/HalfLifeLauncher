@@ -135,10 +135,8 @@ class Build : NukeBuild
             {
                 tasks.Add(Task.Run(() =>
                 {
-                    var runtimeDirectory = OutputDirectory / "runtimes" / runtime;
-                    var runtimeDirectoryDeb = OutputDirectory / $"{Solution.Megasware128_HalfLifeLauncher.Name}.{runtime}.deb";
-
-                    Deb($"-r {runtime} -c {Configuration} -o {OutputDirectory} --version-suffix {GitVersion.NuGetVersionV2} --no-restore");
+                    Deb($"-r {runtime} -c {Configuration} -o {OutputDirectory} --version-suffix {GitVersion.NuGetVersionV2} --no-restore", 
+                        Solution.Megasware128_HalfLifeLauncher.Directory);
                 }));
             }
 
