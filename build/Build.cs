@@ -114,7 +114,7 @@ class Build : NukeBuild
                 tasks.Add(Task.Run(() =>
                 {
                     var runtimeDirectory = TemporaryDirectory / "runtimes" / runtime;
-                    var runtimeDirectoryZip = OutputDirectory / $"{Solution.Megasware128_HalfLifeLauncher.Name}.{runtime}.zip";
+                    var runtimeDirectoryZip = OutputDirectory / $"{Solution.Megasware128_HalfLifeLauncher.Name}.{GitVersion.NuGetVersionV2}.{runtime}.zip";
 
                     Compress(runtimeDirectory, runtimeDirectoryZip);
                 }));
@@ -125,7 +125,7 @@ class Build : NukeBuild
                 tasks.Add(Task.Run(() =>
                 {
                     var runtimeDirectory = TemporaryDirectory / "runtimes" / runtime;
-                    var runtimeDirectoryTarGz = OutputDirectory / $"{Solution.Megasware128_HalfLifeLauncher.Name}.{runtime}.tgz";
+                    var runtimeDirectoryTarGz = OutputDirectory / $"{Solution.Megasware128_HalfLifeLauncher.Name}.{GitVersion.NuGetVersionV2}.{runtime}.tgz";
 
                     Compress(runtimeDirectory, runtimeDirectoryTarGz);
                 }));
